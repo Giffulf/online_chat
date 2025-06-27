@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        #messages { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        #message-form { display: flex; }
+        #message-input { flex-grow: 1; padding: 8px; }
+        button { padding: 8px 15px; margin-left: 10px; }
+        .message { margin-bottom: 10px; }
+        .user { font-weight: bold; color: #333; }
+        .time { font-size: 0.8em; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>Online Chat</h1>
+    <div id="messages"></div>
+    <form id="message-form">
+        <input type="text" id="message-input" placeholder="Type your message..." required>
+        <button type="submit">Send</button>
+    </form>
+    <button id="logout-btn">Logout</button>
+
+    <script src="script.js"></script>
+</body>
+</html>
