@@ -54,6 +54,27 @@ void ChatApp::setup_routes() {
         response.add_header("Content-Type", "text/html");
         return response;
     });
+    CROW_ROUTE(app_, "/script.js")([]{
+        std::ifstream file("static/script.js");
+        if (!file.is_open()) {
+            file.open("../static/script.js"); // Попробуем альтернативный путь
+        }   
+        if (!file.is_open()) {
+            return crow::response(404);
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        auto res = crow::response(buffer.str());
+        res.set_header("Content-Type", "application/javascript");
+        return res;
+    });
+    CROW_ROUTE(app_, "/favicon.ico")([]{
+        auto res = crow::response(204); // No Content
+        res.set_header("Content-Type", "image/x-icon");
+        return res;
+    });
+   
+
 
     // API routes
     CROW_ROUTE(app_, "/api/chat").methods("POST"_method)([this](const crow::request& req) {
@@ -65,8 +86,29 @@ void ChatApp::setup_routes() {
     });
     
     CROW_ROUTE(app_, "/api/register").methods("POST"_method)([this](const crow::request& req) {
-        return handle_register(req);
-    });
+    try {
+        auto body = crow::json::load(req.body);
+        if (!body || !body.has("login") || !body.has("password")) {
+            return crow::response(400, 
+                crow::json::wvalue{{"error", "Invalid request format"}}.dump());
+        }
+
+        std::string login = body["login"].s();
+        std::string password = body["password"].s();
+
+        if (!auth_.register_user(login, password)) {
+            return crow::response(400, 
+                crow::json::wvalue{{"error", "Registration failed"}}.dump());
+        }
+
+        return crow::response(201, 
+            crow::json::wvalue{{"status", "success"}}.dump());
+    } catch (const std::exception& e) {
+        return crow::response(500, 
+            crow::json::wvalue{{"error", "Internal server error"}}.dump());
+    }
+});
+
     
     CROW_ROUTE(app_, "/api/messages").methods("GET"_method)([this](const crow::request& req) {
         return handle_get_messages(req);

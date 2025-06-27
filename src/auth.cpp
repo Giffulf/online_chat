@@ -1,5 +1,5 @@
-#include "auth.h"  // Изменил путь, теперь ищем в системных путях компилятора
-#include <openssl/evp.h>  // Вместо openssl/sha.h для OpenSSL 3.0+
+#include "auth.h"  
+#include <openssl/evp.h>  
 #include <sstream>
 #include <iomanip>
 #include <chrono>

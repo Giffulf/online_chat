@@ -78,11 +78,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     data.messages.forEach(msg => {
                         const messageElement = document.createElement('div');
                         messageElement.className = 'message';
-                        messageElement.innerHTML = 
-                            <span class="user">${msg.user}</span>
-                            <span class="time">${msg.time}</span>
-                            <div>${msg.text}</div>
-                        ;
+                        messageElement.innerHTML =
+                            '<span class="user">' + msg.user + '</span>' +
+                            '<span class="time">' + msg.time + '</span>' +
+                            '<div>' + msg.text + '</div>';
                         messagesContainer.appendChild(messageElement);
                     });
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;

@@ -42,6 +42,18 @@ file(GLOB HEADERS "include/*.h")
 # Создание исполняемого файла
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
+   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/static
+       COMMAND ${CMAKE_COMMAND} -E copy
+           ${CMAKE_CURRENT_SOURCE_DIR}/static/script.js
+           ${CMAKE_CURRENT_BINARY_DIR}/static/script.js
+       COMMAND ${CMAKE_COMMAND} -E copy
+           ${CMAKE_CURRENT_SOURCE_DIR}/static/index.html
+           ${CMAKE_CURRENT_BINARY_DIR}/static/index.html
+   )
+   
+
+
 # Подключение зависимостей
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Crow::Crow
