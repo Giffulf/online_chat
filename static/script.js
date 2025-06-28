@@ -131,6 +131,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         }
         
+        // Обработчик отправки сообщения
+        messageForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+    
+        const errorElement = document.getElementById('message-error') || createErrorElement();
+        errorElement.textContent = '';
+    
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getCookie('auth_token')}`
+            },
+            body: JSON.stringify({
+                message: messageInput.value.trim()
+            })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            if (data.action === 'register') {
+                errorElement.innerHTML = `${data.message}. <a href="/login">Перейти к регистрации</a>`;
+            } else {
+                errorElement.textContent = data.error || 'Ошибка отправки сообщения';
+            }
+            return;
+        }
+
+        messageInput.value = '';
+        loadMessages();
+        
+    } catch (error) {
+        errorElement.textContent = 'Ошибка соединения с сервером';
+        console.error(error);
+    }
+});
+
+
+
+
+
+
         // Send message
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -166,7 +210,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = '/login';
             });
         }
+        // Обработчик выхода
+logoutBtn.addEventListener('click', async function() {
+    try {
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
         
+        // Принудительная очистка на клиенте
+        document.cookie.split(';').forEach(cookie => {
+            document.cookie = cookie.trim().split('=')[0] + 
+                '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        });
+        
+        // Перенаправление с очисткой кеша
+        window.location.replace('/login');
+        
+    } catch (error) {
+        console.error('Ошибка выхода:', error);
+        window.location.href = '/login';
+    }
+    // Вспомогательная функция для создания элемента ошибки
+function createErrorElement() {
+    const element = document.createElement('div');
+    element.id = 'message-error';
+    element.style.color = 'red';
+    element.style.margin = '10px 0';
+    messageForm.parentNode.insertBefore(element, messageForm.nextSibling);
+    return element;
+}
+});
         // Poll for new messages every 3 seconds
         loadMessages();
         setInterval(loadMessages, 3000);

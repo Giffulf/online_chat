@@ -78,8 +78,44 @@ void ChatApp::setup_routes() {
 
     // API routes
     CROW_ROUTE(app_, "/api/chat").methods("POST"_method)([this](const crow::request& req) {
-        return handle_chat(req);
-    });
+    try {
+        // Проверка авторизации
+        std::string login;
+        if (!check_auth(req, login)) {
+            auto res = crow::response(401);
+            res.write(crow::json::wvalue{
+                {"error", "Требуется авторизация"},
+                {"action", "register"},
+                {"message", "Пожалуйста, зарегистрируйтесь или войдите в систему"}
+            }.dump());
+            res.add_header("Content-Type", "application/json");
+            return res;
+        }
+
+        // Проверка данных сообщения
+        auto body = crow::json::load(req.body);
+        if (!body || !body.has("message")) {
+            auto res = crow::response(400);
+            res.write(crow::json::wvalue{{"error", "Неверный формат сообщения"}}.dump());
+            res.add_header("Content-Type", "application/json");
+            return res;
+        }
+
+        // Отправка сообщения
+        if (!db_.add_message(db_.get_user_by_login(login).id, body["message"].s())) {
+            throw std::runtime_error("Ошибка сохранения сообщения");
+        }
+
+        return crow::response(200, crow::json::wvalue{{"status", "success"}}.dump());
+
+    } catch (const std::exception& e) {
+        auto res = crow::response(500);
+        res.write(crow::json::wvalue{{"error", e.what()}}.dump());
+        res.add_header("Content-Type", "application/json");
+        return res;
+    }
+});
+
     
     CROW_ROUTE(app_, "/api/login").methods("POST"_method)([this](const crow::request& req) {
     try {
@@ -143,6 +179,22 @@ void ChatApp::setup_routes() {
     CROW_ROUTE(app_, "/api/messages").methods("GET"_method)([this](const crow::request& req) {
         return handle_get_messages(req);
     });
+
+    CROW_ROUTE(app_, "/api/logout").methods("POST"_method)([this]() {
+    auto response = crow::response(200, crow::json::wvalue{{"status", "success"}}.dump());
+    
+    // Полная очистка куки
+    response.add_header("Set-Cookie", 
+        "auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; "
+        "HttpOnly; SameSite=Lax");
+    
+    // Дополнительные заголовки для безопасности
+    response.add_header("Cache-Control", "no-store");
+    response.add_header("Clear-Site-Data", "\"cookies\"");
+    
+    return response;
+});
+
 }
 
 crow::response ChatApp::handle_chat(const crow::request& req) {
