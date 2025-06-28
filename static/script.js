@@ -4,6 +4,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageForm = document.getElementById('message-form');
     const toggleRegister = document.getElementById('toggle-register');
     
+    // Проверка авторизации при загрузке
+    function checkAuth() {
+        return document.cookie.includes('auth_token');
+    }
+
+    // Функция для обработки входа
+    function handleLogin(login, password) {
+        return fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                login: login,
+                password: password
+            })
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || data.message || 'Login failed');
+            }
+            return data;
+        });
+    }
+
     if (loginForm) {
         // Login page logic
         let isRegister = false;
@@ -38,28 +64,44 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const endpoint = isRegister ? '/api/register' : '/api/login';
             
-            fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    login: login,
-                    password: password
+            errorElement.textContent = '';
+            
+            if (isRegister) {
+                // Обработка регистрации
+                fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        login: login,
+                        password: password
+                    })
                 })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => { throw new Error(text) });
-                }
-                return response.json();
-            })
-            .then(data => {
-                window.location.href = '/';
-            })
-            .catch(error => {
-                errorElement.textContent = error.message;
-            });
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || data.message || 'Registration failed');
+                    }
+                    // После успешной регистрации автоматически входим
+                    return handleLogin(login, password);
+                })
+                .then(() => {
+                    window.location.href = '/';
+                })
+                .catch(error => {
+                    errorElement.textContent = error.message;
+                });
+            } else {
+                // Обработка входа
+                handleLogin(login, password)
+                    .then(() => {
+                        window.location.href = '/';
+                    })
+                    .catch(error => {
+                        errorElement.textContent = error.message;
+                    });
+            }
         });
     }
     
