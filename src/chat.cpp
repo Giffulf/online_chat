@@ -57,7 +57,7 @@ void ChatApp::setup_routes() {
     CROW_ROUTE(app_, "/script.js")([]{
         std::ifstream file("static/script.js");
         if (!file.is_open()) {
-            file.open("../static/script.js"); // Попробуем альтернативный путь
+            file.open("../static/script.js"); 
         }   
         if (!file.is_open()) {
             return crow::response(404);
@@ -82,8 +82,38 @@ void ChatApp::setup_routes() {
     });
     
     CROW_ROUTE(app_, "/api/login").methods("POST"_method)([this](const crow::request& req) {
-        return handle_login(req);
-    });
+    try {
+        // Проверяем Content-Type
+        if (req.get_header_value("Content-Type") != "application/json") {
+            return crow::response(400, "{\"error\":\"Требуется Content-Type: application/json\"}");
+        }
+
+        // Парсим JSON
+        auto body = crow::json::load(req.body);
+        if (!body || !body.has("login") || !body.has("password")) {
+            return crow::response(400, "{\"error\":\"Требуется логин и пароль\"}");
+        }
+
+        std::string login = body["login"].s();
+        std::string password = body["password"].s();
+
+        if (!auth_.authenticate(login, password)) {
+            return crow::response(401, "{\"error\":\"Неверный логин или пароль\"}");
+        }
+
+        std::string token = auth_.generate_token(login);
+        auto response = crow::response(200, "{\"status\":\"success\"}");
+        response.add_header("Content-Type", "application/json");
+        response.add_header("Set-Cookie", 
+            "auth_token=" + token + 
+            "; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax");
+        return response;
+
+    } catch (const std::exception& e) {
+        return crow::response(500, "{\"error\":\"Ошибка сервера\"}");
+    }
+});
+
     
     CROW_ROUTE(app_, "/api/register").methods("POST"_method)([this](const crow::request& req) {
     try {

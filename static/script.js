@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
             }
         });
+        
     }
     
     if (messageForm) {
