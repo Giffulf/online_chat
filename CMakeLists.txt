@@ -77,3 +77,31 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/.env.template ${CMAKE_CURRENT_BINARY_DIR}/.env
 )
+
+# Тесты
+if(BUILD_TESTING)
+    enable_testing()
+    
+    # Тест базы данных
+    add_executable(online_chat_db_test tests/database_test.cpp src/database.cpp)
+    target_include_directories(online_chat_db_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(online_chat_db_test PRIVATE SQLite::SQLite3)
+    add_test(NAME db_test COMMAND online_chat_db_test)
+
+    # Тест аутентификации
+    add_executable(online_chat_auth_test tests/auth_test.cpp src/auth.cpp src/database.cpp)
+    target_include_directories(online_chat_auth_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(online_chat_auth_test PRIVATE 
+        SQLite::SQLite3 
+        OpenSSL::SSL 
+        OpenSSL::Crypto
+        jwt-cpp::jwt-cpp
+    )
+    add_test(NAME auth_test COMMAND online_chat_auth_test)
+
+    # Мета-цель для запуска всех тестов
+    add_custom_target(run_all_tests
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        DEPENDS online_chat_db_test online_chat_auth_test
+    )
+endif()
