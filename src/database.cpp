@@ -3,27 +3,30 @@
 #include <iostream>
 #include <ctime>
 
+// Инициализация подключения к SQLite базе данных
 Database::Database(const std::string& db_file) : db_file_(db_file), db_(nullptr) {}
 
+// Закрытие соединения с базой данных при уничтожении объекта
 Database::~Database() {
     if (db_) {
         sqlite3_close(db_);
     }
 }
 
+// Инициализация структуры базы данных (создание таблиц)
 bool Database::initialize() {
     if (sqlite3_open(db_file_.c_str(), &db_) != SQLITE_OK) {
         std::cerr << "Cannot open database: " << sqlite3_errmsg(db_) << std::endl;
         return false;
     }
 
-    // Create users table
+    // SQL для создания таблицы пользователей
     const char* users_sql = "CREATE TABLE IF NOT EXISTS users ("
-    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                           "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                            "login TEXT UNIQUE NOT NULL,"
                            "password_hash TEXT NOT NULL);";
     
-    // Create messages table
+    // SQL для создания таблицы сообщений
     const char* messages_sql = "CREATE TABLE IF NOT EXISTS messages ("
                               "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                               "user_id INTEGER NOT NULL,"
@@ -34,6 +37,7 @@ bool Database::initialize() {
     return execute(users_sql) && execute(messages_sql);
 }
 
+// Вспомогательный метод для выполнения SQL запросов
 bool Database::execute(const std::string& sql) {
     char* err_msg = nullptr;
     if (sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &err_msg) != SQLITE_OK) {
@@ -44,12 +48,14 @@ bool Database::execute(const std::string& sql) {
     return true;
 }
 
+// Создание нового пользователя в базе данных
 bool Database::create_user(const std::string& login, const std::string& password_hash) {
     std::string sql = "INSERT INTO users (login, password_hash) VALUES ('" + 
-                      login + "', '" + password_hash + "');";
+                     login + "', '" + password_hash + "');";
     return execute(sql);
 }
 
+// Получение информации о пользователе по логину
 User Database::get_user_by_login(const std::string& login) {
     std::string sql = "SELECT id, login, password_hash FROM users WHERE login = '" + login + "';";
     sqlite3_stmt* stmt;
@@ -66,17 +72,19 @@ User Database::get_user_by_login(const std::string& login) {
     return user;
 }
 
+// Добавление нового сообщения в чат
 bool Database::add_message(int user_id, const std::string& text) {
     std::string sql = "INSERT INTO messages (user_id, text) VALUES (" + 
-                      std::to_string(user_id) + ", '" + text + "');";
+                     std::to_string(user_id) + ", '" + text + "');";
     return execute(sql);
 }
 
+// Получение последних сообщений из чата (по умолчанию 50)
 std::vector<Message> Database::get_recent_messages(int limit) {
     std::vector<Message> messages;
     std::string sql = "SELECT m.id, m.user_id, u.login, m.text, m.timestamp "
-                      "FROM messages m JOIN users u ON m.user_id = u.id "
-                      "ORDER BY m.timestamp DESC LIMIT " + std::to_string(limit) + ";";
+                     "FROM messages m JOIN users u ON m.user_id = u.id "
+                     "ORDER BY m.timestamp DESC LIMIT " + std::to_string(limit) + ";";
     
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
@@ -92,7 +100,7 @@ std::vector<Message> Database::get_recent_messages(int limit) {
         sqlite3_finalize(stmt);
     }
     
-    // Reverse to get chronological order
+    // Реверсируем порядок для хронологического вывода
     std::reverse(messages.begin(), messages.end());
     return messages;
 }

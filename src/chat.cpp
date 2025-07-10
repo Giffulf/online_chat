@@ -30,7 +30,6 @@ bool ChatApp::check_auth(const crow::request& req, std::string& login) {
 }
 
 void ChatApp::setup_routes() {
-    // Serve static HTML files
     CROW_ROUTE(app_, "/")([](const crow::request& req) {
         std::ifstream file("static/index.html");
         if (!file.is_open()) {

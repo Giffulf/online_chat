@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if we're on login page or chat page
     const loginForm = document.getElementById('login-form');
     const messageForm = document.getElementById('message-form');
     const toggleRegister = document.getElementById('toggle-register');
@@ -31,7 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (loginForm) {
-        // Login page logic
         let isRegister = false;
         
         if (toggleRegister) {
@@ -107,12 +105,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (messageForm) {
-        // Chat page logic
         const messagesContainer = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const logoutBtn = document.getElementById('logout-btn');
-        
-        // Load messages
+
         function loadMessages() {
             fetch('/api/messages')
                 .then(response => response.json())
@@ -170,12 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-
-
-
-
-
-        // Send message
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -203,7 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Logout
         if (logoutBtn) {
             logoutBtn.addEventListener('click', function() {
                 document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
@@ -241,7 +230,6 @@ function createErrorElement() {
     return element;
 }
 });
-        // Poll for new messages every 3 seconds
         loadMessages();
         setInterval(loadMessages, 3000);
     }

@@ -4,9 +4,11 @@
 #include <iomanip>
 #include <chrono>
 
+// Инициализация сервиса с подключением к БД и JWT секретом
 AuthService::AuthService(Database& db, const std::string& jwt_secret) 
     : db_(db), jwt_secret_(jwt_secret) {}
 
+// Хеширование пароля с использованием SHA-256
 std::string AuthService::hash_password(const std::string& password) {
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
     const EVP_MD* md = EVP_sha256();
@@ -25,6 +27,7 @@ std::string AuthService::hash_password(const std::string& password) {
     return ss.str();
 }
 
+// Генерация JWT токена с логином пользователя (срок действия - 24 часа)
 std::string AuthService::generate_token(const std::string& login) {
     auto token = jwt::create()
         .set_issuer("online_chat")
@@ -36,6 +39,7 @@ std::string AuthService::generate_token(const std::string& login) {
     return token;
 }
 
+// Проверка валидности токена (подпись и срок действия)
 bool AuthService::validate_token(const std::string& token) {
     try {
         auto decoded = jwt::decode(token);
@@ -49,6 +53,7 @@ bool AuthService::validate_token(const std::string& token) {
     }
 }
 
+// Извлечение логина пользователя из JWT токена
 std::string AuthService::get_login_from_token(const std::string& token) {
     try {
         auto decoded = jwt::decode(token);
@@ -58,6 +63,7 @@ std::string AuthService::get_login_from_token(const std::string& token) {
     }
 }
 
+// Аутентификация пользователя по логину и паролю
 bool AuthService::authenticate(const std::string& login, const std::string& password) {
     User user = db_.get_user_by_login(login);
     if (user.id == 0) return false;
@@ -66,6 +72,7 @@ bool AuthService::authenticate(const std::string& login, const std::string& pass
     return user.password_hash == hashed_password;
 }
 
+// Регистрация нового пользователя с хешированием пароля
 bool AuthService::register_user(const std::string& login, const std::string& password) {
     User existing = db_.get_user_by_login(login);
     if (existing.id != 0) return false;
