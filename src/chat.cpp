@@ -3,9 +3,11 @@
 #include <sstream>
 #include <vector>
 
+// Инициализация приложения с зависимостями
 ChatApp::ChatApp(crow::SimpleApp& app, Database& db, AuthService& auth) 
     : app_(app), db_(db), auth_(auth) {}
 
+// Проверка авторизации через заголовок или cookie
 bool ChatApp::check_auth(const crow::request& req, std::string& login) {
     auto auth_header = req.get_header_value("Authorization");
     if (auth_header.empty()) {
@@ -29,6 +31,7 @@ bool ChatApp::check_auth(const crow::request& req, std::string& login) {
     return true;
 }
 
+// Настройка всех маршрутов приложения
 void ChatApp::setup_routes() {
     CROW_ROUTE(app_, "/")([](const crow::request& req) {
         std::ifstream file("static/index.html");
@@ -196,6 +199,8 @@ void ChatApp::setup_routes() {
 
 }
 
+
+// Обработчики запросов
 crow::response ChatApp::handle_chat(const crow::request& req) {
     std::string login;
     if (!check_auth(req, login)) {
